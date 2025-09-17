@@ -1,161 +1,513 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Random Color Generator</title>
     <link rel="icon" type="image/png" href="images/logo.png" />
-    <!-- Bootstrap CSS -->
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Rubik:wght@400;600&display=swap"
       rel="stylesheet"
     />
-    <!-- Custom CSS -->
+
     <style>
-      .color-info {
-        border: 2px solid #ffffff;
-        padding: 20px;
-        margin-top: 20px;
-        border-radius: 5px;
+      :root {
+        --bg: #0b0b0f; /* base app bg */
+        --card: rgba(255, 255, 255, 0.08);
+        --stroke: rgba(255, 255, 255, 0.12);
+        --text: #eaeaf2;
+        --muted: #b5b8c5;
+        --accent: #25d366;
+        --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+        --radius: 18px;
+        --current: #6c5ce7; /* will be updated dynamically */
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto,
+          "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji",
+          "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
+        color: var(--text);
+        background: radial-gradient(
+            1200px 800px at 10% 10%,
+            rgba(255, 255, 255, 0.06),
+            transparent 60%
+          ),
+          radial-gradient(
+            900px 700px at 90% 20%,
+            rgba(255, 255, 255, 0.04),
+            transparent 60%
+          ),
+          linear-gradient(180deg, #0a0a0d 0%, #0f1117 100%);
+        min-height: 100%;
+        display: grid;
+        grid-template-rows: auto 1fr;
+      }
+
+      /* Top bar */
+      .nav {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 14px 18px;
+        border-bottom: 1px solid var(--stroke);
+        background: rgba(0, 0, 0, 0.35);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+      }
+      .nav img {
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+      }
+      .nav .brand {
+        color: var(--text);
+        font-weight: 700;
+        letter-spacing: 0.3px;
+      }
+
+      /* Main */
+      .wrap {
+        display: grid;
+        place-items: center;
+        padding: 24px;
+      }
+
+      .card {
+        width: min(680px, 92vw);
+        border: 1px solid var(--stroke);
+        background: var(--card);
+        box-shadow: var(--shadow);
+        border-radius: var(--radius);
+        padding: 28px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      /* subtle gradient ring around card */
+      .card::before {
+        content: "";
+        position: absolute;
+        inset: -2px;
+        border-radius: calc(var(--radius) + 2px);
+        padding: 2px;
+        background: conic-gradient(
+          from 0deg,
+          color-mix(in oklab, var(--current) 70%, white),
+          transparent 30%,
+          transparent 70%,
+          color-mix(in oklab, var(--current) 70%, white)
+        );
+        -webkit-mask: linear-gradient(#000 0 0) content-box,
+          linear-gradient(#000 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        opacity: 0.15;
+        pointer-events: none;
+      }
+
+      .title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 20px;
+      }
+      .title h1 {
+        margin: 0;
+        font-size: clamp(20px, 2.4vw, 28px);
+        font-weight: 800;
+        letter-spacing: 0.4px;
+      }
+
+      .gen {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        border: 1px solid var(--stroke);
+        background: #0d0f15;
+        color: var(--text);
+        padding: 12px 16px;
+        border-radius: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.2s ease,
+          border-color 0.2s ease;
+        box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
+        user-select: none;
+      }
+      .gen:hover {
+        transform: translateY(-1px);
+        border-color: color-mix(in oklab, var(--current) 65%, white 10%);
+      }
+      .gen:active {
+        transform: translateY(0);
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 20px;
+      }
+      @media (min-width: 720px) {
+        .grid {
+          grid-template-columns: 1.1fr 0.9fr;
+        }
+      }
+
+      .swatchWrap {
+        display: grid;
+        place-items: center;
+        padding: 12px;
+      }
+      .swatch {
+        width: min(280px, 60vw);
+        aspect-ratio: 1 / 1;
+        border-radius: 28px;
+        background: var(--current);
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+        position: relative;
+        overflow: hidden;
+        isolation: isolate;
+      }
+      .swatch::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(
+          320px 220px at 70% 20%,
+          rgba(255, 255, 255, 0.22),
+          transparent 45%
+        );
+        mix-blend-mode: soft-light;
+        pointer-events: none;
+      }
+      .swatch:hover {
+        transform: scale(1.02);
+        box-shadow: 0 28px 70px rgba(0, 0, 0, 0.55);
+      }
+
+      .codes {
+        display: grid;
+        gap: 14px;
+        align-content: start;
+        padding: 8px;
+      }
+
+      .codeRow {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        align-items: center;
+        gap: 10px;
+        border: 1px solid var(--stroke);
+        background: rgba(255, 255, 255, 0.04);
+        border-radius: 12px;
+        padding: 12px 12px 12px 14px;
+      }
+      .label {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: var(--muted);
+        margin-bottom: 6px;
+      }
+      .value {
+        font-family: "Rubik", Inter, ui-monospace, SFMono-Regular, Menlo, Monaco,
+          Consolas, "Liberation Mono", "Courier New", monospace;
+        font-optical-sizing: auto;
+        font-weight: 600;
+        font-size: 18px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .copy {
+        border: 1px solid var(--stroke);
+        background: white;
+        color: #0f1117;
+        padding: 10px 12px;
+        border-radius: 10px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: transform 0.15s ease, background 0.2s ease, color 0.2s ease,
+          border-color 0.2s ease;
+      }
+      .copy:hover {
+        transform: translateY(-1px);
+      }
+      .copy.copied {
+        background: var(--accent);
+        color: white;
+        border-color: transparent;
+      }
+
+      .hint {
+        margin-top: 14px;
+        font-size: 12px;
+        color: var(--muted);
         text-align: center;
-        display: none; /* Initially hidden */
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
       }
-      .copy-button {
-        margin: 5px;
-        transition: all 0.3s ease-in-out; /* Add transition effect */
-        font-family: "Rubik", cursive; /* Apply Rubik font */
-        font-optical-sizing: auto; /* Apply font optical sizing */
-        font-weight: 400; /* Apply font weight */
-        font-style: normal; /* Apply font style */
-        background-color: white;
-        color: black;
+      .kbd {
+        display: inline-block;
+        border: 1px solid var(--stroke);
+        border-bottom-width: 2px;
+        background: rgba(255, 255, 255, 0.05);
+        padding: 1px 6px;
+        border-radius: 6px;
+        font-size: 11px;
+        margin: 0 2px;
       }
-      .copy-button:hover {
-        transform: scale(1.1); /* Add scaling effect on hover */
-        color: white;
-        background-color: #25d366;
+
+      /* animated pulse ring on generate */
+      .genPulse {
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        pointer-events: none;
+        opacity: 0;
+        animation: pulse 0.6s ease-out;
       }
-      #rgbValue,
-      p {
-        font-size: 22px;
-      }
-      #colorButton {
-        margin: 5px;
-        transition: all 0.3s ease-in-out; /* Add transition effect */
-        font-family: "Rubik", cursive; /* Apply Rubik font */
-        font-optical-sizing: auto; /* Apply font optical sizing */
-        font-weight: 400; /* Apply font weight */
-        font-style: normal; /* Apply font style */
-        background-color: black;
-        color: white;
-        border: 2px solid rgb(211, 207, 207);
-        border-radius: 5px;
-      }
-      #colorButton:hover {
-        transform: scale(1.1);
-        background-color: #25d366;
-        color: white;
+      @keyframes pulse {
+        0% {
+          opacity: 0.4;
+          box-shadow: 0 0 0 0
+            color-mix(in oklab, var(--current) 50%, transparent);
+        }
+        100% {
+          opacity: 0;
+          box-shadow: 0 0 0 22px transparent;
+        }
       }
     </style>
   </head>
+
   <body>
-    <nav
-      class="navbar navbar-expand-lg justify-content-center"
-      style="background-color: black"
-    >
-      <a class="navbar-brand" href="#" style="color: white">
-        <img
-          src="images/logo.png"
-          width="30"
-          height="30"
-          class="d-inline-block align-top"
-          alt=""
-        />
-        Random Color Generator
-      </a>
-    </nav>
-    <div
-      class="container d-flex flex-column vh-100 justify-content-center align-items-center"
-    >
-      <div class="text-center mt-4">
-        <button id="colorButton" class="btn playpen-sans">
-          <h2>GENERATE NEW COLOR</h2>
-        </button>
-        <div id="rgbInfo" class="card color-info">
-          <p>RGB: <span id="rgbValue"></span></p>
-          <button class="btn btn-secondary copy-button playpen-sans">
-            Copy code
-          </button>
-        </div>
-        <div id="hexInfo" class="card color-info">
-          <p>Hex: <span id="hexValue"></span></p>
-          <button class="btn btn-secondary copy-button playpen-sans">
-            Copy code
-          </button>
-        </div>
-      </div>
+    <!-- Top Bar -->
+    <div class="nav" role="navigation" aria-label="Top">
+      <img src="images/logo.png" alt="Logo" />
+      <span class="brand">Random Color Generator</span>
     </div>
 
-    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <!-- Bootstrap JS -->
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
-    <script>
-      // Function to generate a random RGB color
-      function generateRandomColor() {
-        var r = Math.floor(Math.random() * 256);
-        var g = Math.floor(Math.random() * 256);
-        var b = Math.floor(Math.random() * 256);
-        return { r: r, g: g, b: b };
-      }
+    <!-- Main -->
+    <main class="wrap">
+      <section class="card" aria-live="polite">
+        <div class="title">
+          <h1>Instant Colors. Copy & go.</h1>
+          <button
+            id="generate"
+            class="gen"
+            type="button"
+            aria-label="Generate new color"
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              aria-hidden="true"
+            >
+              <path
+                d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+            </svg>
+            Generate
+            <span class="genPulse" id="pulse"></span>
+          </button>
+        </div>
 
-      // Function to convert RGB to hexadecimal color
-      function rgbToHex(r, g, b) {
-        return (
-          "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)
+        <div class="grid">
+          <!-- Swatch -->
+          <div class="swatchWrap">
+            <div
+              id="swatch"
+              class="swatch"
+              role="img"
+              aria-label="Color preview"
+            ></div>
+          </div>
+
+          <!-- Codes -->
+          <div class="codes">
+            <div>
+              <div class="label">Hex</div>
+              <div class="codeRow">
+                <div class="value" id="hexValue">#6C5CE7</div>
+                <button
+                  class="copy"
+                  data-target="hexValue"
+                  type="button"
+                  aria-label="Copy HEX"
+                >
+                  Copy
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <div class="label">RGB</div>
+              <div class="codeRow">
+                <div class="value" id="rgbValue">108, 92, 231</div>
+                <button
+                  class="copy"
+                  data-target="rgbValue"
+                  type="button"
+                  aria-label="Copy RGB"
+                >
+                  Copy
+                </button>
+              </div>
+            </div>
+
+            <p class="hint">
+              Press <span class="kbd">Space</span> or
+              <span class="kbd">G</span> to generate a new color.
+            </p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      // --- Color utils ---
+      const rand = () => Math.floor(Math.random() * 256);
+      const toHex = (r, g, b) =>
+        "#" +
+        [r, g, b]
+          .map((v) => v.toString(16).padStart(2, "0"))
+          .join("")
+          .toUpperCase();
+      const rgbStr = (r, g, b) => `${r}, ${g}, ${b}`;
+
+      // Relative luminance for contrast decision
+      const luminance = (r, g, b) => {
+        const srgb = [r, g, b].map((v) => {
+          v /= 255;
+          return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+        });
+        return 0.2126 * srgb[0] + 0.7152 * srgb[1] + 0.0722 * srgb[2];
+      };
+
+      // Elements
+      const root = document.documentElement;
+      const swatch = document.getElementById("swatch");
+      const hexEl = document.getElementById("hexValue");
+      const rgbEl = document.getElementById("rgbValue");
+      const btn = document.getElementById("generate");
+      const pulse = document.getElementById("pulse");
+
+      function setColor(r, g, b) {
+        const hex = toHex(r, g, b);
+        const rgb = rgbStr(r, g, b);
+
+        // Update CSS var & swatch
+        root.style.setProperty("--current", hex);
+        swatch.style.background = hex;
+
+        // update values
+        hexEl.textContent = hex;
+        rgbEl.textContent = rgb;
+
+        // enhance overall background subtly using a gradient with the new color
+        document.body.style.background = `
+        radial-gradient(1200px 800px at 10% 10%, ${hex}22, transparent 60%),
+        radial-gradient(900px 700px at 90% 20%, ${hex}18, transparent 60%),
+        linear-gradient(180deg, #0a0a0d 0%, #0f1117 100%)
+      `;
+
+        // adjust text tint if color is very light (just for the swatch aria label contrast hint if needed)
+        const lum = luminance(r, g, b); // 0..1
+        swatch.setAttribute(
+          "aria-label",
+          `Color preview ${hex} (RGB ${rgb}) ${
+            lum > 0.6 ? "light" : "dark"
+          } tone`
         );
       }
 
-      $(document).ready(function () {
-        // Copy function
-        function copyToClipboard(value) {
-          var tempInput = document.createElement("input");
-          tempInput.value = value;
-          document.body.appendChild(tempInput);
-          tempInput.select();
-          document.execCommand("copy");
-          document.body.removeChild(tempInput);
+      function generate() {
+        const r = rand(),
+          g = rand(),
+          b = rand();
+        setColor(r, g, b);
+
+        // ripple/pulse feedback
+        pulse.style.animation = "none";
+        // force reflow to restart animation
+        void pulse.offsetWidth;
+        pulse.style.animation = "";
+      }
+
+      // Copy with Clipboard API + fallback
+      async function copyText(text, buttonEl) {
+        try {
+          if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(text);
+          } else {
+            const ta = document.createElement("textarea");
+            ta.value = text;
+            ta.style.position = "fixed";
+            ta.style.left = "-9999px";
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand("copy");
+            document.body.removeChild(ta);
+          }
+          // success feedback
+          const orig = buttonEl.textContent;
+          buttonEl.textContent = "Copied ✓";
+          buttonEl.classList.add("copied");
+          setTimeout(() => {
+            buttonEl.textContent = orig;
+            buttonEl.classList.remove("copied");
+          }, 1400);
+        } catch (e) {
+          console.error(e);
+          buttonEl.textContent = "Failed";
+          setTimeout(() => (buttonEl.textContent = "Copy"), 1200);
         }
+      }
 
-        $("#colorButton").click(function () {
-          var color = generateRandomColor();
-          var hexValue = rgbToHex(color.r, color.g, color.b);
-          $("body, html").css(
-            "background-color",
-            "rgb(" + color.r + "," + color.g + "," + color.b + ")"
-          );
-          $("#rgbValue").text(color.r + ", " + color.g + ", " + color.b);
-          $("#hexValue").text(hexValue);
-          $(".color-info").show(); // Show color info boxes
-        });
-
-        // Copy the text when the "Copy code" button is clicked
-        $(".copy-button").click(function () {
-          var copyButton = $(this);
-          var valueToCopy = copyButton.siblings("p").find("span").text();
-          copyToClipboard(valueToCopy);
-
-          // Change button text to "Copied!" with a tick mark
-          copyButton.html('<span class="text-success">&#10003; Copied!</span>');
-
-          // Change button text back to "Copy code" after 3 seconds
-          setTimeout(function () {
-            copyButton.html("Copy code");
-          }, 3000);
+      // Events
+      btn.addEventListener("click", generate);
+      document.querySelectorAll(".copy").forEach((b) => {
+        b.addEventListener("click", () => {
+          const id = b.getAttribute("data-target");
+          const val = document.getElementById(id).textContent.trim();
+          copyText(val, b);
         });
       });
+
+      // Keyboard shortcuts: Space or "g/G"
+      window.addEventListener("keydown", (e) => {
+        const isTyping = ["INPUT", "TEXTAREA"].includes(
+          document.activeElement.tagName
+        );
+        if (isTyping) return;
+        if (e.code === "Space" || e.key.toLowerCase() === "g") {
+          e.preventDefault();
+          generate();
+        }
+      });
+
+      // First paint
+      generate();
     </script>
   </body>
 </html>

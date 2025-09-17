@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Random Color Generator</title>
+    <link rel="icon" type="image/png" href="images/logo.png" />
+    <!-- Bootstrap CSS -->
+    <link
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Custom CSS -->
+    <style>
+      .color-info {
+        border: 2px solid #ffffff;
+        padding: 20px;
+        margin-top: 20px;
+        border-radius: 5px;
+        text-align: center;
+        display: none; /* Initially hidden */
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+      .copy-button {
+        margin: 5px;
+        transition: all 0.3s ease-in-out; /* Add transition effect */
+        font-family: "Rubik", cursive; /* Apply Rubik font */
+        font-optical-sizing: auto; /* Apply font optical sizing */
+        font-weight: 400; /* Apply font weight */
+        font-style: normal; /* Apply font style */
+        background-color: white;
+        color: black;
+      }
+      .copy-button:hover {
+        transform: scale(1.1); /* Add scaling effect on hover */
+        color: white;
+        background-color: #25d366;
+      }
+      #rgbValue,
+      p {
+        font-size: 22px;
+      }
+      #colorButton {
+        margin: 5px;
+        transition: all 0.3s ease-in-out; /* Add transition effect */
+        font-family: "Rubik", cursive; /* Apply Rubik font */
+        font-optical-sizing: auto; /* Apply font optical sizing */
+        font-weight: 400; /* Apply font weight */
+        font-style: normal; /* Apply font style */
+        background-color: black;
+        color: white;
+        border: 2px solid rgb(211, 207, 207);
+        border-radius: 5px;
+      }
+      #colorButton:hover {
+        transform: scale(1.1);
+        background-color: #25d366;
+        color: white;
+      }
+    </style>
+  </head>
+  <body>
+    <nav
+      class="navbar navbar-expand-lg justify-content-center"
+      style="background-color: black"
+    >
+      <a class="navbar-brand" href="#" style="color: white">
+        <img
+          src="images/logo.png"
+          width="30"
+          height="30"
+          class="d-inline-block align-top"
+          alt=""
+        />
+        Random Color Generator
+      </a>
+    </nav>
+    <div
+      class="container d-flex flex-column vh-100 justify-content-center align-items-center"
+    >
+      <div class="text-center mt-4">
+        <button id="colorButton" class="btn playpen-sans">
+          <h2>GENERATE NEW COLOR</h2>
+        </button>
+        <div id="rgbInfo" class="card color-info">
+          <p>RGB: <span id="rgbValue"></span></p>
+          <button class="btn btn-secondary copy-button playpen-sans">
+            Copy code
+          </button>
+        </div>
+        <div id="hexInfo" class="card color-info">
+          <p>Hex: <span id="hexValue"></span></p>
+          <button class="btn btn-secondary copy-button playpen-sans">
+            Copy code
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script>
+      // Function to generate a random RGB color
+      function generateRandomColor() {
+        var r = Math.floor(Math.random() * 256);
+        var g = Math.floor(Math.random() * 256);
+        var b = Math.floor(Math.random() * 256);
+        return { r: r, g: g, b: b };
+      }
+
+      // Function to convert RGB to hexadecimal color
+      function rgbToHex(r, g, b) {
+        return (
+          "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)
+        );
+      }
+
+      $(document).ready(function () {
+        // Copy function
+        function copyToClipboard(value) {
+          var tempInput = document.createElement("input");
+          tempInput.value = value;
+          document.body.appendChild(tempInput);
+          tempInput.select();
+          document.execCommand("copy");
+          document.body.removeChild(tempInput);
+        }
+
+        $("#colorButton").click(function () {
+          var color = generateRandomColor();
+          var hexValue = rgbToHex(color.r, color.g, color.b);
+          $("body, html").css(
+            "background-color",
+            "rgb(" + color.r + "," + color.g + "," + color.b + ")"
+          );
+          $("#rgbValue").text(color.r + ", " + color.g + ", " + color.b);
+          $("#hexValue").text(hexValue);
+          $(".color-info").show(); // Show color info boxes
+        });
+
+        // Copy the text when the "Copy code" button is clicked
+        $(".copy-button").click(function () {
+          var copyButton = $(this);
+          var valueToCopy = copyButton.siblings("p").find("span").text();
+          copyToClipboard(valueToCopy);
+
+          // Change button text to "Copied!" with a tick mark
+          copyButton.html('<span class="text-success">&#10003; Copied!</span>');
+
+          // Change button text back to "Copy code" after 3 seconds
+          setTimeout(function () {
+            copyButton.html("Copy code");
+          }, 3000);
+        });
+      });
+    </script>
+  </body>
+</html>
